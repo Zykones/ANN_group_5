@@ -11,9 +11,9 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 class MnistModel(tf.keras.Model):
     def __init__(self, neurons):
         super(MnistModel,self).__init__()
-        self.dense1= Dense(256, activation="relu")
-        self.dense2= Dense(neurons, activation="relu")
-        self.out = Dense(10, activation="relu")
+        self.dense1= Dense(256, activation="relu") # hidden Layer 01
+        self.dense2= Dense(neurons, activation="relu") #  Hidden Layer 02
+        self.out = Dense(10, activation="relu") # Output layer
     
     @tf.function
     def call(self, inputs):

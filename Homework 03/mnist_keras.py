@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ######################################################
-n_epochs = 5
-eta = 0.001
-n_neurons_hidden_layer = 15
-batch_size = 16
+n_epochs = 10
+eta = 0.0001
+n_neurons_hidden_layer = 3
+batch_size = 2
 
 ######################################################
 
