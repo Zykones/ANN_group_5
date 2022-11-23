@@ -66,12 +66,15 @@ class TwinMNISTModel(tf.keras.Model):
         with tf.GradientTape() as tape:
             output = self((img1, img2), training=True)
             loss = self.loss_function(label, output)
+            self.metrics_list[0].update_state(label, output)
+            
+            # What exactly does the "mean" loss capture in this model? 
+            self.metrics_list[1].update_state(loss)
             
         gradients = tape.gradient(loss, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
         #something with the metrics object, need to google
-        metrics = {"loss" : loss}
         
         # update the state of the metrics according to loss
         # return a dictionary with metric names as keys and metric results as values
