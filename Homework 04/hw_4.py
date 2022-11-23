@@ -2,6 +2,7 @@ import tensorflow_datasets as tfds
 import tensorflow as tf
 import numpy
 import os
+import datetime
 
 class TwinMNISTModel(tf.keras.Model):
 
@@ -66,25 +67,35 @@ class TwinMNISTModel(tf.keras.Model):
         with tf.GradientTape() as tape:
             output = self((img1, img2), training=True)
             loss = self.loss_function(label, output)
-            self.metrics_list[0].update_state(label, output)
-            
-            # What exactly does the "mean" loss capture in this model? 
-            self.metrics_list[1].update_state(loss)
             
         gradients = tape.gradient(loss, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
         #something with the metrics object, need to google
+        self.metrics_list[0].update_state(label, output)
+
+        # What exactly does the "mean" loss capture in this model? 
+        self.metrics_list[1].update_state(loss)
         
         # update the state of the metrics according to loss
         # return a dictionary with metric names as keys and metric results as values
+
+        # Not sure if .numpy() is correct in this context
+        return {"Accuracy" : self.metrics_list[0].result().numpy(), "Loss" : self.metrics_list[1].result().numpy()}
 
     # 6. test_step method
     def test_step(self, data):
         # same as train step (without parameter updates)
         img1, img2, label = data
+        output = self((img1, img2), training=False)
+        loss = self.loss_function(label, output)
+        self.metrics_list[0].update_state(label, output)
 
+        # What exactly does the "mean" of the loss capture in this model? 
+        self.metrics_list[1].update_state(loss)
 
+        # Not sure if .numpy() is correct in this context
+        return {"Accuracy" : self.metrics_list[0].result().numpy(), "Loss" : self.metrics_list[1].result().numpy()}
 
 
 def prepare_data(data, batch_size=32):
@@ -131,3 +142,12 @@ test_ds = prepare_data(test_ds)
 
 for img1, img2, label in train_ds.take(1):
     print(img1.shape, img2.shape, label.shape)
+
+### Summary Writers 
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+train_log_path = f"logs/train/{current_time}"
+val_log_path = f"logs/val/{current_time}"
+
+train_summary_writer = tf.summary.create_file_writer(train_log_path)
+val_summary_writer = tf.summary.create_file_writer(val_log_path)
