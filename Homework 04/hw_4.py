@@ -30,7 +30,7 @@ def prepare_data(data, batch_size=32):
     return zipped_ds
 
 train_ds = prepare_data(train_ds, batch_size=32)
-test_ds = prepare_data(test_ds, batch_size=32)
+val_ds = prepare_data(val_ds, batch_size=32)
 
 class TwinMNISTModel(tf.keras.Model):
 
@@ -43,7 +43,8 @@ class TwinMNISTModel(tf.keras.Model):
         self.metrics_list = [tf.keras.metrics.BinaryAccuracy(),
                              tf.keras.metrics.Mean(name="loss")]
         
-        self.optimizer = tf.keras.optimizers.Adam()
+        #self.optimizer = tf.keras.optimizers.Adam()
+        self.optimizer = tf.keras.optimizers.SGD()
         
         self.loss_function = tf.keras.losses.BinaryCrossentropy()
         
@@ -53,11 +54,11 @@ class TwinMNISTModel(tf.keras.Model):
         
         self.dense3 = tf.keras.layers.Dense(128, activation=tf.nn.relu)
         
-        self.out_layer = tf.keras.layer.Dense(1,activation=tf.nn.sigmoid)
+        self.out_layer = tf.keras.layers.Dense(1,activation=tf.nn.sigmoid)
         
            
     # 2. call method (forward computation)
-    #@tf.function
+    @tf.function
     def call(self, images, training=False):
         img1, img2 = images
         
@@ -173,7 +174,7 @@ def training_loop(model, train_ds, val_ds, start_epoch,
 
 
 ### Summary Writers 
-def create_summary_writers(config_name):
+def create_summary_writers(config_name="RUN"):
     
     # Define where to save the logs
     # along with this, you may want to save a config file with the same name so you know what the hyperparameters were used
@@ -181,8 +182,8 @@ def create_summary_writers(config_name):
     
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    train_log_path = f"logs/{config_name}/{current_time}/train"
-    val_log_path = f"logs/{config_name}/{current_time}/val"
+    train_log_path = f"Homework 04/logs/{config_name}/{current_time}/train"
+    val_log_path = f"Homework 04/logs/{config_name}/{current_time}/val"
 
     # log writer for training metrics
     train_summary_writer = tf.summary.create_file_writer(train_log_path)
@@ -192,14 +193,14 @@ def create_summary_writers(config_name):
     
     return train_summary_writer, val_summary_writer
 
-train_summary_writer, val_summary_writer = create_summary_writers(config_name="RUN1")
+train_summary_writer, val_summary_writer = create_summary_writers(config_name="SGD")
 
 
 # 1. instantiate model
 model = TwinMNISTModel()
 
 # 2. choose a path to save the weights
-save_path = "trained_model_RUN1"
+save_path = "Homework 04/trained_model_SGD"
 
 # 2. pass arguments to training loop function
 
@@ -218,8 +219,8 @@ fresh_model = TwinMNISTModel()
 
 # build the model's parameters by calling it on input
 for img1,img2,label in train_ds:
-    fresh_model((img1,img2));
+    fresh_model((img1,img2))
     break
 
 # load the saved weights
-model = fresh_model.load_weights(save_path)
+#model = fresh_model.load_weights(save_path)
