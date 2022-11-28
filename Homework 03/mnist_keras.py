@@ -5,9 +5,10 @@ import numpy as np
 
 ######################################################
 n_epochs = 10
-eta = 0.0001
-n_neurons_hidden_layer = 3
-batch_size = 2
+eta = 0.001
+n_neurons_hidden_layer = 30
+n_neurons_hidden_layer2 = 256
+batch_size = 32
 
 ######################################################
 
@@ -18,6 +19,7 @@ x_train, x_test = x_train / 255.0, x_test / 255.0
 
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)), #input layer with 28x28 = 784 neurons
+  tf.keras.layers.Dense(n_neurons_hidden_layer2, activation='relu'),
   tf.keras.layers.Dense(n_neurons_hidden_layer, activation='relu'), #Dense hidden layer with n_neuron_hidden_layer neurons
   tf.keras.layers.Dense(10) #Output layer without Softmax!
 ])
