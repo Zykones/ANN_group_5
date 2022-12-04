@@ -6,18 +6,21 @@ import numpy as np
 import datetime
 import tqdm
 
+# Number of paralell threads, 0 0 means the system picks an appropriate number.
+num_threads = 0
+
+tf.config.threading.set_inter_op_parallelism_threads(num_threads)
+
 def prepare_data(cifar10, batch_size=32):
     #uint_8 to float32 conversion
     cifar10 = cifar10.map(lambda img, target: (tf.cast(img, tf.float32), target))
 
     #flatten 32x32 vectors
-    #cifar10 = cifar10.map(lambda img, target: (tf.reshape(img, (-1,)), target))
     
     #normalization
     cifar10 = cifar10.map(lambda img, target: ((img/128.0)-1.0, target))
 
-    #one hot ?
-    #welche depth?
+    #one hot encoding
     cifar10 = cifar10.map(lambda img, target: (img, tf.one_hot(target, depth=10)))
 
     #cache to memory
@@ -95,21 +98,20 @@ class Cifar10Model(tf.keras.Model):
         super().__init__()
         
         # Layers
-        self.convlayer1 = layers.Conv2D(filters=24, kernel_size=3, 
-                                                    padding="same", activation="relu")
-        self.convlayer2 = layers.Conv2D(filters=24, kernel_size=3,
-                                                    padding="same", activation="relu")
-        self.pooling = layers.MaxPooling2D(pool_size=2, strides=2)
+        self.convlayer1 = layers.Conv2D(32, (3,3), padding='same', activation='relu', input_shape=(32,32,3))
+        self.convlayer2 = layers.Conv2D(32, (3,3), padding='same', activation='relu')
+        self.pooling1 = layers.MaxPooling2D(pool_size=(2,2))
+        self.convlayer3 = layers.Conv2D(64, (3,3), padding='same', activation='relu')
+        self.convlayer4 = layers.Conv2D(64, (3,3), padding='same', activation='relu')
+        self.pooling2 = layers.MaxPooling2D(pool_size=(2,2))
         self.global_pool = layers.GlobalAvgPool2D()
-        
-        
+
         self.dense = layers.Dense(neurons, activation="relu")
 
         self.out = layers.Dense(10, activation="softmax")
 
         # Metrics Object 
-        self.metrics_list = [metrics.CategoricalCrossentropy(),
-                             metrics.Mean(name="loss")]
+        self.metrics_list = [metrics.CategoricalCrossentropy(name="loss"), metrics.CategoricalAccuracy(name="acc")]
         
         # Optimizer
         self.optimizer = optimizers.Adam(learning_rate=eta)
@@ -121,7 +123,10 @@ class Cifar10Model(tf.keras.Model):
     def call(self, x):
         x = self.convlayer1(x)
         x = self.convlayer2(x)
-        x = self.pooling(x)
+        x = self.pooling1(x)
+        x = self.convlayer3(x)
+        x = self.convlayer4(x)
+        x = self.pooling2(x)
         x = self.global_pool(x)
         x = self.dense(x)
         x = self.out(x)
@@ -155,7 +160,7 @@ class Cifar10Model(tf.keras.Model):
     	
         #update metrics according to loss
         self.metrics[0].update_state(target, prediction)
-        self.metrics[1].update_state(loss)
+        self.metrics[1].update_state(target, prediction)
         
         return {m.name : m.result() for m in self.metrics}
 
@@ -167,9 +172,10 @@ class Cifar10Model(tf.keras.Model):
         loss = self.loss_function(target, prediction)
 
         self.metrics[0].update_state(target, prediction)
-        self.metrics[1].update_state(loss)
+        self.metrics[1].update_state(target, prediction)
 
         return {m.name : m.result() for m in self.metrics}
+
 
 
 #load cifar 10 dataset
@@ -180,10 +186,11 @@ test_ds = prepare_data(test_ds)
 
 #hyperparameters and variables for training loop
 ################################################
-epochs = 2
-eta = 0.001 #ist der Wert immer noch okay?
-num_neurons_hidden_layer = 30 #sind das immer noch hidden layers und brauchen wir 30?
+epochs = 10
+eta = 0.001 
+num_neurons_hidden_layer = 30 
 ################################################
+
 
 train_summary_writer, val_summary_writer = create_summary_writers(config_name="Adam")
 
