@@ -8,8 +8,13 @@ import tqdm
 import matplotlib.pyplot as plt
 
 # Number of paralell threads, 0 0 means the system picks an appropriate number.
-num_threads = 12
-
+#############################################################################################
+# if you dont know what threads are or how many your system can handle, change
+# #####################
+# num_threads to zero!!
+#############################################################################################
+num_threads = 0
+##############################################################################
 tf.config.threading.set_inter_op_parallelism_threads(num_threads)
 
 def prepare_data(cifar10, batch_size=32):
