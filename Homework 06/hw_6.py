@@ -7,7 +7,7 @@ import datetime
 import tqdm
 
 # Number of paralell threads, 0 0 means the system picks an appropriate number.
-num_threads = 0
+num_threads = 4
 
 tf.config.threading.set_inter_op_parallelism_threads(num_threads)
 
@@ -52,7 +52,7 @@ def create_summary_writers(config_name="RUN"):
     return train_summary_writer, val_summary_writer
 
 def training_loop(model, train_ds, val_ds, epochs:int, train_summery_writer, val_sumnmery_writer,  save_path=None):
-    
+    val_list = []
     for e in range(epochs):
 
         for data in tqdm.tqdm(train_ds, position=0, leave=True):
@@ -66,6 +66,7 @@ def training_loop(model, train_ds, val_ds, epochs:int, train_summery_writer, val
             # e.g. tf.summary.image(name="mean_activation_layer3", data = metrics["mean_activation_layer3"],step=e)
         
         #print the metrics
+        val_list.append(metrics.items())
         print([f"{key}: {value.numpy()}" for (key, value) in metrics.items()])
 
         model.reset_metrics()
@@ -80,12 +81,14 @@ def training_loop(model, train_ds, val_ds, epochs:int, train_summery_writer, val
             # alternatively, log metrics individually (allows for non-scalar metrics such as tf.keras.metrics.MeanTensor)
             # e.g. tf.summary.image(name="mean_activation_layer3", data = metrics["mean_activation_layer3"],step=e)
             
+        val_list.append(metrics.items())
         print([f"val_{key}: {value.numpy()}" for (key, value) in metrics.items()])
         # 7. reset metric objects
         model.reset_metrics()
     
     if save_path:
         model.save_weights(save_path)
+    return val_list
     
 
 
@@ -123,14 +126,14 @@ class Cifar10Model(tf.keras.Model):
     @tf.function
     def call(self, x):
         x = self.convlayer1(x)
-        x = self.batch_norm1(x) #new 
-        x = self.convlayer2(x)
-        x = self.batch_norm2(x) #new
-        x = self.pooling1(x)
-        x = self.convlayer3(x)
-        x = self.convlayer4(x)
-        x = self.pooling2(x)
-        x = self.convlayer5(x) #new
+        #x = self.batch_norm1(x) #new 
+        #x = self.convlayer2(x)
+        #x = self.batch_norm2(x) #new
+        #x = self.pooling1(x)
+        #x = self.convlayer3(x)
+        #x = self.convlayer4(x)
+        #x = self.pooling2(x)
+        #x = self.convlayer5(x) #new
         x = self.global_pool(x)
         x = self.dense(x)
         x = self.out(x)
@@ -190,9 +193,9 @@ test_ds = prepare_data(test_ds)
 
 #hyperparameters and variables for training loop
 ################################################
-epochs = 10 #from 2 to 10 
+epochs = 3 #from 2 to 10 
 eta = 0.001 
-num_neurons_hidden_layer = 30 
+num_neurons_hidden_layer = 16
 ################################################
 
 
@@ -200,5 +203,9 @@ train_summary_writer, val_summary_writer = create_summary_writers(config_name="A
 
 model = Cifar10Model(num_neurons_hidden_layer, eta)
 
-training_loop(model, train_ds, test_ds, epochs, train_summary_writer, val_summary_writer)
+val_list = training_loop(model, train_ds, test_ds, epochs, train_summary_writer, val_summary_writer)
+
+count = 1
+for i in val_list:
+    print(i)
 
