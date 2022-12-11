@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 # #####################
 # num_threads to zero!!
 #############################################################################################
-num_threads = 0
+num_threads = 12
 ##############################################################################
 tf.config.threading.set_inter_op_parallelism_threads(num_threads)
 
@@ -46,8 +46,8 @@ def create_summary_writers(config_name="RUN"):
     
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    train_log_path = f"Homework 05/logs/{config_name}/{current_time}/train"
-    val_log_path = f"Homework 05/logs/{config_name}/{current_time}/val"
+    train_log_path = f"Homework 06/logs/{config_name}/{current_time}/train"
+    val_log_path = f"Homework 06/logs/{config_name}/{current_time}/val"
 
     # log writer for training metrics
     train_summary_writer = tf.summary.create_file_writer(train_log_path)
@@ -135,14 +135,19 @@ class Cifar10Model(tf.keras.Model):
         
         # Layers
         self.convlayer1 = layers.Conv2D(32, (3,3), padding='same', activation='relu', input_shape=(32,32,3))
-        self.batch_norm1 = layers.BatchNormalization() #new 
+        self.reg1 = layers.ActivityRegularization(0, 0.1)
+        self.batch_norm1 = layers.BatchNormalization() 
         self.convlayer2 = layers.Conv2D(32, (3,3), padding='same', activation='relu')
-        self.batch_norm2 = layers.BatchNormalization() #new
+        self.reg2 = layers.ActivityRegularization(0, 0.1)
+        self.batch_norm2 = layers.BatchNormalization() 
         self.pooling1 = layers.MaxPooling2D(pool_size=(2,2))
         self.convlayer3 = layers.Conv2D(64, (3,3), padding='same', activation='relu')
+        self.dropout1 = layers.Dropout(0.2)
         self.convlayer4 = layers.Conv2D(64, (3,3), padding='same', activation='relu')
+        self.dropout2 = layers.Dropout(0.5)
         self.pooling2 = layers.MaxPooling2D(pool_size=(2,2))
-        self.convlayer5 = layers.Conv2D(128, (3,3), padding="same", activation="relu") #new
+        self.convlayer5 = layers.Conv2D(128, (3,3), padding="same", activation="relu") 
+        self.dropout3 = layers.Dropout(0.5)
         self.global_pool = layers.GlobalAvgPool2D()
 
         self.dense = layers.Dense(neurons, activation="relu")
@@ -161,14 +166,19 @@ class Cifar10Model(tf.keras.Model):
     @tf.function
     def call(self, x):
         x = self.convlayer1(x)
-        x = self.batch_norm1(x) #new 
+        x = self.reg1(x)
+        x = self.batch_norm1(x)
         x = self.convlayer2(x)
-        x = self.batch_norm2(x) #new
+        x = self.reg2(x)
+        x = self.batch_norm2(x) 
         x = self.pooling1(x)
         x = self.convlayer3(x)
+        x = self.dropout1(x)
         x = self.convlayer4(x)
+        x = self.dropout2(x)
         x = self.pooling2(x)
-        x = self.convlayer5(x) #new
+        x = self.convlayer5(x) 
+        x = self.dropout3(x)
         x = self.global_pool(x)
         x = self.dense(x)
         x = self.out(x)
@@ -230,7 +240,7 @@ test_ds = prepare_data(test_ds)
 ################################################
 epochs = 10 #from 2 to 10 
 eta = 0.001 
-num_neurons_hidden_layer = 30
+num_neurons_hidden_layer = 64
 ################################################
 
 
