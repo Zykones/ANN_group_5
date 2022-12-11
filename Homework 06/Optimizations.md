@@ -19,7 +19,7 @@ Regularization
 
 The regularization adds a penalty for the loss function with the goal to minimize the parameter magnitude.
 There are 2 functions - L1 and L2.
-The both modify the global loss to bring the optimizer algorithm in the desired direction.
+They both modify the global loss to bring the optimizer algorithm in the desired direction.
 
 Label smoothing
 
